@@ -42,7 +42,7 @@ export default function Home() {
             background:'var(--accent-d)', border:'1px solid rgba(124,106,247,0.22)',
             fontSize:12, color:'var(--accent)', fontWeight:700, letterSpacing:'0.06em',
           }}>
-            <Hexagon size={12} strokeWidth={2}/> TATUM × WALRUS HACKATHON 2025
+            <Hexagon size={12} strokeWidth={2}/> TATUM × WALRUS HACKATHON 2026
           </div>
 
           <h1 style={{
