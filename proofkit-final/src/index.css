@@ -58,3 +58,33 @@ input::placeholder, textarea::placeholder { color: var(--muted); }
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 .spin { animation: spin 0.9s linear infinite; }
 .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+/* ── Mobile responsiveness ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Prevent zoom on input focus (iOS) */
+  input, textarea, select { font-size: 16px !important; }
+
+  /* Home hero */
+  .hero-buttons { flex-direction: column !important; align-items: stretch !important; }
+  .hero-buttons a, .hero-buttons button { text-align: center; justify-content: center; }
+
+  /* Feature cards — single column */
+  .features-grid { grid-template-columns: 1fr !important; }
+
+  /* Mint page */
+  .step-bar { gap: 0 !important; }
+  .step-bar .step-line { width: 30px !important; }
+
+  /* Portfolio stats */
+  .stats-row { grid-template-columns: 1fr 1fr !important; }
+
+  /* Badge cards — single column */
+  .badges-grid { grid-template-columns: 1fr !important; }
+
+  /* General padding reduction */
+  .page-container { padding: 32px 16px !important; }
+
+  /* Search bar stack */
+  .search-bar { flex-direction: column !important; }
+  .search-bar button { width: 100% !important; }
+}
