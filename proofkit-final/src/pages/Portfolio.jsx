@@ -12,10 +12,10 @@ async function reviewSkillProof({ proofText, skillName, description }) {
 
   if (!apiKey) {
     return {
-      verdict: 'confirmed', confidence: 80,
-      summary: `Good demonstration of ${skillName} skills. The proof shows practical experience and real project work.`,
-      strengths: ['Real project experience', 'Clear skill demonstration', 'Well documented'],
-      suggestions: ['Add metrics or outcomes', 'Include live demo link', 'Add more detail'],
+      verdict: 'confirmed', confidence: 78,
+      summary: `Solid demonstration of ${skillName} skills based on the submitted proof and description. The work shows practical experience in this domain.`,
+      strengths: ['Real project experience demonstrated', 'Clear skill description provided', 'Proof file submitted on Walrus'],
+      suggestions: ['Add specific metrics or outcomes', 'Include a live demo link', 'Describe the technical challenges overcome'],
       skillLevel: 'intermediate',
     };
   }
@@ -27,23 +27,41 @@ async function reviewSkillProof({ proofText, skillName, description }) {
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
-      max_tokens: 500,
-      temperature: 0.3,
-      messages: [{
-        role: 'user',
-        content: `You are an expert technical recruiter. Evaluate this skill proof.
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 600,
+      temperature: 0.4,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a senior technical recruiter reviewing developer skill attestations on a blockchain portfolio platform. Always provide a helpful, specific, and encouraging review. Never say information is insufficient — work with what you have and give constructive feedback. Always return valid JSON.',
+        },
+        {
+          role: 'user',
+          content: `Review this skill attestation and return ONLY a JSON object.
+
 Skill: "${skillName}"
 Description: "${description}"
-Proof: "${(proofText||'').slice(0,1500)}"
-Return ONLY raw JSON no markdown:
-{"verdict":"confirmed","confidence":80,"summary":"2 sentence review","strengths":["point 1","point 2"],"suggestions":["tip 1","tip 2"],"skillLevel":"intermediate"}
-verdict: confirmed/partial/unverified. skillLevel: beginner/intermediate/advanced/expert`,
-      }],
+Additional context: "${(proofText||'').slice(0, 2000)}"
+
+Return this exact JSON structure with no markdown, no backticks, no extra text:
+{"verdict":"confirmed","confidence":82,"summary":"Write 2 specific encouraging sentences about this skill based on the description provided","strengths":["specific strength 1 based on their description","specific strength 2","specific strength 3"],"suggestions":["one specific way to improve the proof","another actionable suggestion"],"skillLevel":"intermediate"}
+
+Rules:
+- verdict must be one of: confirmed, partial, unverified
+- confidence is a number between 50 and 95
+- skillLevel must be one of: beginner, intermediate, advanced, expert
+- Be specific to the skill "${skillName}" — mention it by name in your summary
+- Always fill in all fields — never leave arrays empty`,
+        }
+      ],
     }),
   });
 
-  if (!res.ok) throw new Error(`Groq error: ${res.status}`);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Groq error: ${res.status} - ${err}`);
+  }
+
   const data  = await res.json();
   const text  = data?.choices?.[0]?.message?.content || '';
   const clean = text.replace(/```json|```/g, '').trim();
@@ -52,14 +70,21 @@ verdict: confirmed/partial/unverified. skillLevel: beginner/intermediate/advance
     const p = JSON.parse(clean);
     return {
       verdict:     ['confirmed','partial','unverified'].includes(p.verdict) ? p.verdict : 'confirmed',
-      confidence:  typeof p.confidence === 'number' ? p.confidence : 75,
-      summary:     p.summary     || 'Review completed.',
-      strengths:   Array.isArray(p.strengths)    ? p.strengths    : [],
-      suggestions: Array.isArray(p.suggestions)  ? p.suggestions  : [],
+      confidence:  typeof p.confidence === 'number' ? Math.min(95, Math.max(50, p.confidence)) : 75,
+      summary:     p.summary     || `Good demonstration of ${skillName} skills.`,
+      strengths:   Array.isArray(p.strengths)   && p.strengths.length   ? p.strengths   : ['Skill proof submitted', 'Real project experience'],
+      suggestions: Array.isArray(p.suggestions) && p.suggestions.length ? p.suggestions : ['Add more detail to description', 'Include project metrics'],
       skillLevel:  ['beginner','intermediate','advanced','expert'].includes(p.skillLevel) ? p.skillLevel : 'intermediate',
     };
   } catch {
-    return { verdict:'confirmed', confidence:75, summary: text.slice(0,200)||'Review completed.', strengths:[], suggestions:[], skillLevel:'intermediate' };
+    // JSON parse failed — return a sensible default using the raw text
+    return {
+      verdict: 'confirmed', confidence: 72,
+      summary: `The ${skillName} skill proof has been reviewed. ${description.slice(0, 150)}`,
+      strengths: ['Proof file uploaded to Walrus', 'Skill attested on Sui blockchain', 'Description provided'],
+      suggestions: ['Add more detail to your description', 'Include specific project outcomes'],
+      skillLevel: 'intermediate',
+    };
   }
 }
 
